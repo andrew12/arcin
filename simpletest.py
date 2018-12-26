@@ -10,13 +10,19 @@ hiddev = hidapi.hid_open(0x1d50, 0x6080, None)
 if not hiddev: 
 	raise RuntimeError('Target not found.')
 
+prev = None
+
+s = struct.Struct('<xxxHH')
+
 while 1:
-	data = ctypes.create_string_buffer(5)
-	if hidapi.hid_read(hiddev, data, 5) != 5:
+	data = ctypes.create_string_buffer(s.size)
+	if hidapi.hid_read(hiddev, data, s.size) != s.size:
 		raise RuntimeError('Reading failed.')
 	
-	report_id, a, b = struct.unpack('<xHBB', data)
-	
-	#if b != 0:
-#        print a, b
-        print report_id, a, b
+	x, y = s.unpack(data)
+	x = x >> 6
+	y = y >> 6
+	data = x, y
+	if prev != data:
+		print data
+		prev = data
